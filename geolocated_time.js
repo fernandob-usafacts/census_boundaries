@@ -1,7 +1,7 @@
 //TODO
 //"csa",
 var layers = [
-	"cd","elementary-school","places","secondary-school","senate-upper","senate-lower","county","unified-school"
+	"cbsa","cd","elementary-school","places","secondary-school","senate-upper","senate-lower","county","unified-school"
 ]
 
 var map//	= drawMap()
@@ -24,6 +24,7 @@ G5420: "#a56eff",
 //G4210: "#006600",
 G4040: "#CC6A19",
 G4020: "#E5BD3F",//
+G3110: "green"
 // X0072:'red',
 // X0001:"magenta", X0014:"green", X0005:"gold", X0029:"gold"
 		}
@@ -41,6 +42,7 @@ G4020: "#E5BD3F",//
 
 
 		var mtfccsFileNames = {
+			"G3110":"cbsa",
 			"G5200":"congress",
 			"G4040":"county_subdivisions",
 			"G4110":"places",
@@ -186,7 +188,8 @@ DP03_0005PE :"Unemployed",
 DP03_0052PE: "Less than $10,000",
 DP03_0061PE: "$200,000 or more",
 DP03_0062E: "Median household income",
-	DP03_0028PE:"service occupations"
+	DP03_0028PE:"service occupations",
+	"housing": "housing prices"
 }
 		
 function setCenter(latLng){
@@ -202,7 +205,7 @@ function setCenter(latLng){
 	var features = map.queryRenderedFeatures(pointOnScreen, {
 	  	layers: layers
 	  })
-  		//console.log(features)
+  		console.log(features)
 	  
 	  var uniqueIds = []
 	  for (var l in layers){
@@ -221,11 +224,11 @@ function setCenter(latLng){
 	  var chartData = {}
 	  
 	  for(var f in features){		  
-		  var geoid = features[f].properties.GEOID
+		  var geoid = features[f].layer.id == 'cbsa' ? features[f].properties.geoid : features[f].properties.GEOID;
 		  if(existingFeatures.indexOf(geoid)==-1){
 			  existingFeatures.push(geoid)
 			  var layer = features[f].layer.id+" copy"
-			 var mtfccId = features[f].properties["MTFCC"]
+			 var mtfccId = features[f].layer.id == 'cbsa' ? features[f].properties["mtfcc"] : features[f].properties["MTFCC"];
 			  if(keys.indexOf(mtfccId)>-1){
 				  //console.log(Object.keys(timeSeries[mtfccId]))
 				  //console.log(mtfccId,geoid)
@@ -279,7 +282,9 @@ function  drawSmallMultiple(data,key){
 		var yScale = d3.scaleLinear().domain([0,100000]).range([h-p*2,0])
 	}else if(key=="DP03_0001E"){
 		var yScale = d3.scaleLinear().domain([0,500000]).range([h-p*2,0])
-	}else{
+	} else if (key === 'housing') {
+		var yScale = d3.scaleLinear().domain([100,300]).range([h-p*2,0])
+	}else {
 		var yScale = d3.scaleLinear().domain([0,30]).range([h-p*2,0])
 	}
 			//var yScale = d3.scaleLinear().domain([0,30]).range([h-p*2,0])
@@ -289,6 +294,7 @@ function  drawSmallMultiple(data,key){
 			
 	for(var d in data){
 		var color = layerColors[d]
+		if (Object.keys(data[d]).indexOf(popKey) < 0) continue;
 		var chartData = data[d][popKey]
 		var chartDiv = d3.select("#group_"+key).append("div").style("display","inline-block").style("width",w+"px")
 		.attr("class", "chart")
@@ -303,11 +309,21 @@ function  drawSmallMultiple(data,key){
 		
 				svg.append("g").call(yAxis)
 			.attr("transform","translate("+p*3+","+p+")")
-		
+
+		var dateParse = d3.timeParse("%Y-%m");
+
+		var dates = Object.keys(chartData);
+
+		if (popKey === 'housing'){
+			xScale = d3.scaleLinear().domain(d3.extent(dates, d => dateParse(d))).range([0,w-p*4]);
+		} else {
+			xScale = d3.scaleLinear().domain([2010,2020]).range([0,w-p*4]);
+		}
+		xAxis = d3.axisBottom().scale(xScale).ticks(2);
 		
 	d3.select("#"+popKey+"_"+d+"_value")
 	.append("path")
-	.datum(Object.keys(chartData))
+	.datum(dates)
   	.attr("stroke", color)
 	.attr("stroke-width",2)
 	.attr("opacity",.5)
@@ -316,10 +332,11 @@ function  drawSmallMultiple(data,key){
 		
 	.attr("d",d3.line()
 		.x(function(d){			
-			return xScale(d)})
-		.y(function(d){
-			var previousYear = d-1
-			var previousValue = parseInt(chartData[previousYear])
+			return popKey === 'housing' ? xScale(dateParse(d)) : xScale(d)
+		})
+		.y(function(d, i){
+			var previousYear = i-1
+			var previousValue = parseInt(chartData[dates[previousYear]])
 			var currentValue = parseInt(chartData[d])
 			var percentChange = (previousValue-currentValue)/currentValue*100
 			if(isNaN(percentChange)==true){
@@ -349,13 +366,14 @@ function drawChangeSmallMultiple(data,key){
 	var h = 100
 	var p = 20
 	var xScale = d3.scaleLinear().domain([2010,2020]).range([0,w-p*2])
-			var yScale = d3.scaleLinear().domain([30,-30]).range([h-p*2,0])
+	var yScale = popKey === 'housing' ? d3.scaleLinear().domain([3,-3]).range([h-p*2,0]) : d3.scaleLinear().domain([30,-30]).range([h-p*2,0])
 	
 		var xAxis = d3.axisBottom().scale(xScale).ticks(2)
 		var yAxis = d3.axisLeft().scale(yScale).ticks(4)
 			
 	for(var d in data){
 		var color = layerColors[d]
+		if (Object.keys(data[d]).indexOf(popKey) < 0) continue;
 		var chartData = data[d][popKey]
 		var chartDiv = d3.select("#group_"+key).append("div").style("display","inline-block").style("width",w+"px")
 		.attr("class", "chart")
@@ -370,11 +388,22 @@ function drawChangeSmallMultiple(data,key){
 		
 				svg.append("g").call(yAxis)
 			.attr("transform","translate("+p+","+p+")")
+
+		var dateParse = d3.timeParse("%Y-%m");
+
+		var dates = Object.keys(chartData);
+
+		if (popKey === 'housing'){
+			xScale = d3.scaleLinear().domain(d3.extent(dates, d => dateParse(d))).range([0,w-p*2]);
+		} else {
+			xScale = d3.scaleLinear().domain([2010,2020]).range([0,w-p*2]);
+		}
+		xAxis = d3.axisBottom().scale(xScale).ticks(2);
 		
 		
 	d3.select("#"+popKey+"_"+d)
 	.append("path")
-	.datum(Object.keys(chartData))
+	.datum(dates)
   	.attr("stroke", color)
 	.attr("stroke-width",2)
 	.attr("opacity",.5)
@@ -383,10 +412,11 @@ function drawChangeSmallMultiple(data,key){
 		
 	.attr("d",d3.line()
 		.x(function(d){			
-			return xScale(d)})
-		.y(function(d){
-			var previousYear = d-1
-			var previousValue = parseInt(chartData[previousYear])
+			return popKey === 'housing' ? xScale(dateParse(d)) : xScale(d)
+		})
+		.y(function(d, i){
+			var previousYear = i-1
+			var previousValue = parseInt(chartData[dates[previousYear]])
 			var currentValue = parseInt(chartData[d])
 			var percentChange = (previousValue-currentValue)/currentValue*100
 			if(isNaN(percentChange)==true){
@@ -448,7 +478,7 @@ function drawMap(){
     map = new mapboxgl.Map({
 		container: 'map',
 		//style:"mapbox://styles/jiaz-usafacts/cl65eu5qq000h15oajkphueac?fresh=true",// ,//newest
-		style: "mapbox://styles/jiaz-usafacts/cl6e3gmlc000315npkvm6z7f7",
+		style: "mapbox://styles/jiaz-usafacts/cl6usncbd000a14ny7oi5k9gs",
 		zoom: 10,
 		preserveDrawingBuffer: true,
 		minZoom:3.5,
