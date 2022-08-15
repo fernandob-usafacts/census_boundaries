@@ -1,7 +1,7 @@
 //TODO
 //"csa",
 var layers = [
-	"cbsa","cd","elementary-school","places","secondary-school","senate-upper","senate-lower","county","unified-school"
+	"states","cbsa","cd","elementary-school","places","secondary-school","senate-upper","senate-lower","county","unified-school"
 ]
 
 var map//	= drawMap()
@@ -13,7 +13,7 @@ var popup;
 var dp03
 var timeSeries
 		var layerColors = {
-//G4000: "#e62790",
+G4000: "#e62790",
 G5220: "#00347B",
 G5210: "#249edc",
 G5200: "#6929c4",
@@ -44,6 +44,7 @@ G3110: "green"
 		var mtfccsFileNames = {
 			"G3110":"cbsa",
 			"G5200":"congress",
+			"G4000":"state",
 			"G4040":"county_subdivisions",
 			"G4110":"places",
 			"G5420":"school_unified",
@@ -229,6 +230,7 @@ function setCenter(latLng){
 			  existingFeatures.push(geoid)
 			  var layer = features[f].layer.id+" copy"
 			 var mtfccId = features[f].layer.id == 'cbsa' ? features[f].properties["mtfcc"] : features[f].properties["MTFCC"];
+			 if (features[f].layer.id == 'states') mtfccId = 'G4000';
 			  if(keys.indexOf(mtfccId)>-1){
 				  //console.log(Object.keys(timeSeries[mtfccId]))
 				  //console.log(mtfccId,geoid)
@@ -265,6 +267,7 @@ function setCenter(latLng){
 	  d3.select("#info").html(displayString)
 }
 function  drawSmallMultiple(data,key){
+	if (key === 'housing') console.log(data)
 	d3.select("#group_"+key).append("div").html(dp03Columns[key])//+" "+mtfccsFileNames[d])
 	.style("font-size","24px")
 	.style("padding-top","10px")
@@ -296,10 +299,23 @@ function  drawSmallMultiple(data,key){
 		var color = layerColors[d]
 		if (Object.keys(data[d]).indexOf(popKey) < 0) continue;
 		var chartData = data[d][popKey]
+		if (key === 'housing') console.log(chartData)
 		var chartDiv = d3.select("#group_"+key).append("div").style("display","inline-block").style("width",w+"px")
 		.attr("class", "chart")
 		
 		chartDiv.append("div").html(mtfccsFileNames[d])
+
+		var dateParse = d3.timeParse("%Y-%m");
+
+		var dates = Object.keys(chartData);
+
+		if (popKey === 'housing'){
+			xScale = d3.scaleLinear().domain(d3.extent(dates, d => dateParse(d))).range([0,w-p*4]);
+			xAxis = d3.axisBottom().scale(xScale).ticks(2).tickFormat(d3.timeFormat("%Y"))
+		} else {
+			xScale = d3.scaleLinear().domain([2010,2020]).range([0,w-p*4]);
+			xAxis = d3.axisBottom().scale(xScale).ticks(2);
+		}
 		
 		var svg = chartDiv.append("svg").attr("height",h).attr("width",w)
 		.attr("id", popKey+"_"+d+"_value")
@@ -309,17 +325,6 @@ function  drawSmallMultiple(data,key){
 		
 				svg.append("g").call(yAxis)
 			.attr("transform","translate("+p*3+","+p+")")
-
-		var dateParse = d3.timeParse("%Y-%m");
-
-		var dates = Object.keys(chartData);
-
-		if (popKey === 'housing'){
-			xScale = d3.scaleLinear().domain(d3.extent(dates, d => dateParse(d))).range([0,w-p*4]);
-		} else {
-			xScale = d3.scaleLinear().domain([2010,2020]).range([0,w-p*4]);
-		}
-		xAxis = d3.axisBottom().scale(xScale).ticks(2);
 		
 	d3.select("#"+popKey+"_"+d+"_value")
 	.append("path")
@@ -379,6 +384,18 @@ function drawChangeSmallMultiple(data,key){
 		.attr("class", "chart")
 		
 		chartDiv.append("div").html(mtfccsFileNames[d])
+
+		var dateParse = d3.timeParse("%Y-%m");
+
+		var dates = Object.keys(chartData);
+
+		if (popKey === 'housing'){
+			xScale = d3.scaleLinear().domain(d3.extent(dates, d => dateParse(d))).range([0,w-p*4]);
+			xAxis = d3.axisBottom().scale(xScale).ticks(2).tickFormat(d3.timeFormat("%Y"))
+		} else {
+			xScale = d3.scaleLinear().domain([2010,2020]).range([0,w-p*4]);
+			xAxis = d3.axisBottom().scale(xScale).ticks(2);
+		}
 		
 		var svg = chartDiv.append("svg").attr("height",h).attr("width",w)
 		.attr("id", popKey+"_"+d)
@@ -388,17 +405,6 @@ function drawChangeSmallMultiple(data,key){
 		
 				svg.append("g").call(yAxis)
 			.attr("transform","translate("+p+","+p+")")
-
-		var dateParse = d3.timeParse("%Y-%m");
-
-		var dates = Object.keys(chartData);
-
-		if (popKey === 'housing'){
-			xScale = d3.scaleLinear().domain(d3.extent(dates, d => dateParse(d))).range([0,w-p*2]);
-		} else {
-			xScale = d3.scaleLinear().domain([2010,2020]).range([0,w-p*2]);
-		}
-		xAxis = d3.axisBottom().scale(xScale).ticks(2);
 		
 		
 	d3.select("#"+popKey+"_"+d)
