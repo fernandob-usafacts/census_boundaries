@@ -190,7 +190,17 @@ DP03_0052PE: "Less than $10,000",
 DP03_0061PE: "$200,000 or more",
 DP03_0062E: "Median household income",
 	DP03_0028PE:"service occupations",
-	"housing": "housing prices"
+	"fmhpi_sa": "housing prices",
+	"school_enrollment": "school enrollment",
+	"PM25_98P": "PM2.5 98th percentile",
+	"O3_4M": "03 4th Max",
+	"PM25_wam": "PM2.5 weighted annual mean",
+	"SO2_99P": "SO2 99th percentile",
+	"PM10_2M": "PM10 2nd max",
+	"CO_2M": "C0 2dn max",
+	"NO2_am": "NO2 annual mean",
+	"NO2_98P": "NO2 98th percentile",
+	"Pb_M3ma": "Pb max 3-month avg"
 }
 		
 function setCenter(latLng){
@@ -267,7 +277,7 @@ function setCenter(latLng){
 	  d3.select("#info").html(displayString)
 }
 function  drawSmallMultiple(data,key){
-	if (key === 'housing') console.log(data)
+	if(key=='PM10_2M') console.log(data)
 	d3.select("#group_"+key).append("div").html(dp03Columns[key])//+" "+mtfccsFileNames[d])
 	.style("font-size","24px")
 	.style("padding-top","10px")
@@ -285,8 +295,14 @@ function  drawSmallMultiple(data,key){
 		var yScale = d3.scaleLinear().domain([0,100000]).range([h-p*2,0])
 	}else if(key=="DP03_0001E"){
 		var yScale = d3.scaleLinear().domain([0,500000]).range([h-p*2,0])
-	} else if (key === 'housing') {
+	} else if (key === 'fmhpi_sa') {
 		var yScale = d3.scaleLinear().domain([100,300]).range([h-p*2,0])
+	} else if (key == 'school_enrollment'){
+		var yScale = d3.scaleLinear().domain([10000,100000]).range([h-p*2,0])
+	} else if (key == 'O3_4M'){
+		var yScale = d3.scaleLinear().domain([0,1]).range([h-p*2,0])
+	} else if (key == 'NO2_98P'){
+		var yScale = d3.scaleLinear().domain([0,60]).range([h-p*2,0])
 	}else {
 		var yScale = d3.scaleLinear().domain([0,30]).range([h-p*2,0])
 	}
@@ -299,7 +315,6 @@ function  drawSmallMultiple(data,key){
 		var color = layerColors[d]
 		if (Object.keys(data[d]).indexOf(popKey) < 0) continue;
 		var chartData = data[d][popKey]
-		if (key === 'housing') console.log(chartData)
 		var chartDiv = d3.select("#group_"+key).append("div").style("display","inline-block").style("width",w+"px")
 		.attr("class", "chart")
 		
@@ -309,7 +324,7 @@ function  drawSmallMultiple(data,key){
 
 		var dates = Object.keys(chartData);
 
-		if (popKey === 'housing'){
+		if (popKey === 'fmhpi_sa'){
 			xScale = d3.scaleLinear().domain(d3.extent(dates, d => dateParse(d))).range([0,w-p*4]);
 			xAxis = d3.axisBottom().scale(xScale).ticks(2).tickFormat(d3.timeFormat("%Y"))
 		} else {
@@ -337,7 +352,7 @@ function  drawSmallMultiple(data,key){
 		
 	.attr("d",d3.line()
 		.x(function(d){			
-			return popKey === 'housing' ? xScale(dateParse(d)) : xScale(d)
+			return popKey === 'fmhpi_sa' ? xScale(dateParse(d)) : xScale(d)
 		})
 		.y(function(d, i){
 			var previousYear = i-1
@@ -371,7 +386,7 @@ function drawChangeSmallMultiple(data,key){
 	var h = 100
 	var p = 20
 	var xScale = d3.scaleLinear().domain([2010,2020]).range([0,w-p*2])
-	var yScale = popKey === 'housing' ? d3.scaleLinear().domain([3,-3]).range([h-p*2,0]) : d3.scaleLinear().domain([30,-30]).range([h-p*2,0])
+	var yScale = popKey === 'fmhpi_sa' ? d3.scaleLinear().domain([3,-3]).range([h-p*2,0]) : d3.scaleLinear().domain([30,-30]).range([h-p*2,0])
 	
 		var xAxis = d3.axisBottom().scale(xScale).ticks(2)
 		var yAxis = d3.axisLeft().scale(yScale).ticks(4)
@@ -389,7 +404,7 @@ function drawChangeSmallMultiple(data,key){
 
 		var dates = Object.keys(chartData);
 
-		if (popKey === 'housing'){
+		if (popKey === 'fmhpi_sa'){
 			xScale = d3.scaleLinear().domain(d3.extent(dates, d => dateParse(d))).range([0,w-p*4]);
 			xAxis = d3.axisBottom().scale(xScale).ticks(2).tickFormat(d3.timeFormat("%Y"))
 		} else {
@@ -418,7 +433,7 @@ function drawChangeSmallMultiple(data,key){
 		
 	.attr("d",d3.line()
 		.x(function(d){			
-			return popKey === 'housing' ? xScale(dateParse(d)) : xScale(d)
+			return popKey === 'fmhpi_sa' ? xScale(dateParse(d)) : xScale(d)
 		})
 		.y(function(d, i){
 			var previousYear = i-1
